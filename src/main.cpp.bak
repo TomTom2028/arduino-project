@@ -1,0 +1,174 @@
+#include <Arduino.h>
+
+const int LEFT_TILT_PIN = 7;
+const int RIGHT_TILT_PIN = 6;
+
+const int BTN1_PIN = 4;
+const int BTN2_PIN = 3;
+
+
+const int SHIFT_PIN_DATA = 12;
+const int SHIFT_PIN_CLK = 10;
+const int SHIFT_PIN_LATCH = 11;
+
+
+
+enum Tilt {
+    LEFT,
+    RIGHT,
+    DEF
+};
+
+enum Move {
+    TILT_L,
+    TILT_R,
+    BTN_1,
+    BTN_2,
+    NONE
+
+};
+
+void sendByteToShift(byte data)
+{
+    digitalWrite(SHIFT_PIN_LATCH, LOW);
+    shiftOut(SHIFT_PIN_DATA, SHIFT_PIN_CLK, LSBFIRST, data);
+    digitalWrite(SHIFT_PIN_LATCH, HIGH);
+}
+
+
+byte sevenSegLastByte = 0xff;
+byte sevenSegByte = sevenSegLastByte;
+
+
+void setup() {
+    pinMode(LEFT_TILT_PIN, INPUT);
+    pinMode(RIGHT_TILT_PIN, INPUT);
+
+    pinMode(BTN1_PIN, INPUT);
+    pinMode(BTN2_PIN, INPUT);
+
+
+    pinMode(SHIFT_PIN_DATA, OUTPUT);
+    pinMode(SHIFT_PIN_CLK, OUTPUT);
+    pinMode(SHIFT_PIN_LATCH, OUTPUT);
+
+
+    Serial.begin(9600);
+
+
+
+    sendByteToShift(sevenSegLastByte);
+}
+
+
+
+Tilt tiltStatus = DEF;
+Tilt lastTiltStatus = tiltStatus;
+
+
+Tilt debouncedTiltStatus = lastTiltStatus;
+Tilt lastDebouncedTiltStatus = debouncedTiltStatus;
+
+const int COMO_LEN = 7;
+
+Move combo[] = {TILT_L, TILT_L, BTN_1, BTN_2, BTN_2, BTN_1, TILT_R};
+
+int numComboCorrect = 0;
+
+bool startTiltTimer = false;
+
+
+unsigned long debounceTiltMs = 100;
+
+unsigned long lastUpdateTiltMs = 0;
+
+void getDebouncedTiltStatus()
+{
+    if (!digitalRead(LEFT_TILT_PIN))
+    {
+        tiltStatus = LEFT;
+    }
+
+
+    if (!digitalRead(RIGHT_TILT_PIN))
+    {
+        tiltStatus = RIGHT;
+    }
+
+    if (digitalRead(LEFT_TILT_PIN) && digitalRead(RIGHT_TILT_PIN))
+    {
+        tiltStatus = DEF;
+    }
+
+
+    if (lastTiltStatus != tiltStatus)
+    {
+        lastTiltStatus = tiltStatus;
+        startTiltTimer = true;
+        lastUpdateTiltMs = millis();
+    }
+
+
+    if (millis() - lastUpdateTiltMs > debounceTiltMs && startTiltTimer)
+    {
+        startTiltTimer = false;
+        debouncedTiltStatus = lastTiltStatus;
+    }
+
+}
+
+
+void doMove(Move toDoMove)
+{
+
+}
+
+
+Move lastMove = NONE;
+Move currentMove = lastMove;
+
+void loop() {
+
+    getDebouncedTiltStatus();
+
+    // In this if statement we can access the update of the debounced status
+    if (lastDebouncedTiltStatus != debouncedTiltStatus)
+    {
+        lastDebouncedTiltStatus = debouncedTiltStatus;
+
+        if (debouncedTiltStatus == LEFT)
+        {
+            Serial.println("LEFT");
+            bitSet(sevenSegByte, 6);
+        }
+        if (debouncedTiltStatus == RIGHT)
+        {
+            Serial.println("RIGHT");
+            bitSet(sevenSegByte, 6);
+        }
+        if (debouncedTiltStatus == DEF)
+        {
+            Serial.println("DEF");
+            bitClear(sevenSegByte, 6);
+        }
+
+    }
+
+
+    if (lastMove != currentMove)
+    {
+        lastMove = currentMove;
+        doMove(lastMove);
+    }
+
+
+    if (sevenSegLastByte != sevenSegByte)
+    {
+        sevenSegLastByte = sevenSegByte;
+        sendByteToShift(sevenSegLastByte);
+    }
+
+
+
+
+}

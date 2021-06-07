@@ -1,0 +1,5 @@
+1) random engine me een seed initaliseren door analog read te doen op ongebruikte analogpin
+
+2) "current" unsigned long in de pause functie wordt niet gebruikt
+
+3) "huidig" unsigned long in de whackMole functie wordt niet gebruikt

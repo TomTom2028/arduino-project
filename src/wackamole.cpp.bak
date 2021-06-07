@@ -1,0 +1,182 @@
+#include <ShiftRegister74HC595.h>
+#include "Arduino.h"
+ShiftRegister74HC595<1> sr(0, 1, 2);
+int rood = 0;
+int geel = 0;
+int blauw = 0;
+int roodIn = 5;
+int roodOut = 11;
+int geelIn = 6;
+int geelOut = 12;
+int blauwIn = 7;
+int blauwOut = 13;
+int piezoPin = 10;
+int mol = -1;
+int punten=0;
+
+void setup()
+{
+
+    pinMode(roodIn, INPUT);
+    pinMode(geelIn, INPUT);
+    pinMode(blauwIn, INPUT);
+    pinMode(roodOut, OUTPUT);
+    pinMode(geelOut, OUTPUT);
+    pinMode(blauwOut, OUTPUT);
+
+}
+
+
+void pause() {
+    unsigned long current;
+    unsigned long end;
+
+    mol = -1;
+    digitalWrite(roodOut, LOW);
+    digitalWrite(geelOut, LOW);
+    digitalWrite(blauwOut, LOW);
+
+    int pause = rand() % 500 + 100;
+    current = millis();
+    end = millis() + pause;
+    while  (millis()<end) {
+
+        if (digitalRead(roodIn) == HIGH || digitalRead(geelIn) == HIGH || digitalRead(blauwIn) == HIGH) {
+            tone(piezoPin, 50, 300);
+            delay(300);
+        }
+    }
+}
+
+
+void toonMol() {
+    mol = random(1,4);
+    if (mol==1) {
+        digitalWrite(roodOut, HIGH);
+    } else if (mol==2) {
+        digitalWrite(geelOut, HIGH);
+    }else if (mol==3) {
+        digitalWrite(blauwOut, HIGH);
+    }
+}
+
+void setPunten(){
+    if(punten == 0){
+        uint8_t sc0[] = {B01111111};
+        sr.setAll(sc0);}
+
+    else if(punten ==  1){
+        uint8_t sc1[] = { B01000010};
+        sr.setAll(sc1);}
+    else if(punten == 2){
+        uint8_t sc2[] = { B11101101 };
+        sr.setAll(sc2);}
+    else if(punten ==  3){
+        uint8_t sc3[] = { B10111101 };
+        sr.setAll(sc3);}
+    else if(punten ==  4){
+        uint8_t sc4[] = { B10011010 };
+        sr.setAll(sc4);}
+    else if( punten ==  5){
+        uint8_t sc5[] = { B10110111 };
+        sr.setAll(sc5);}
+
+    else if(punten==  6){
+        uint8_t sc6[] = { B11110111 };
+        sr.setAll(sc6);}
+
+    else if(punten==  7){
+        uint8_t sc7[] = { B00011100};
+        sr.setAll(sc7);}
+    else if(punten ==  8){
+        uint8_t sc8[] = { B11111110};
+        sr.setAll(sc8);}
+
+    else if( punten ==  9){
+        uint8_t sc9[] = { B10111110};
+        sr.setAll(sc9);}
+
+    else if( punten ==  10){
+        for( int i = 0 ; i<7;i++){
+            sr.set(i,HIGH);
+            delay(100);
+            sr.setAll(HIGH);
+        }
+        for(int i = 0; i <1 ; i--){
+            uint8_t sc6[] = { B11110111 };
+            sr.setAll(sc6);
+
+        }
+
+    }
+}
+
+void whackMole() {
+    unsigned long huidig;
+    unsigned long end;
+    huidig = millis();
+    end = millis() + 550;
+
+    while  (millis()<end) {
+        rood = digitalRead(roodIn);
+        if (rood == HIGH) {
+            if (mol==1) {
+                // High pitch tone ++
+
+                tone(piezoPin, 800, 10);
+                delay(10);
+                punten++;
+            } else {
+                punten--;
+
+
+                tone(piezoPin, 50, 300);
+                delay(300);
+            }
+        }
+
+        geel = digitalRead(geelIn);
+        if (geel == HIGH) {
+            if (mol==2) {
+
+
+                tone(piezoPin, 800, 10);
+                delay(10);
+                punten++;
+            } else {
+                punten--;
+
+                // Low pitch tone ---
+                tone(piezoPin, 50, 300);
+                delay(300);
+            }
+        }
+
+        blauw = digitalRead(blauwIn);
+        if (blauw == HIGH) {
+            if (mol==3) {
+                // High pitch tone +++
+
+
+                tone(piezoPin, 800, 10);
+                delay(10);
+                punten++;
+            } else {
+                punten--;
+
+                // Low pitch tone ---
+                tone(piezoPin, 50, 300); //Pin,Frequency,Duration
+                delay(300);
+            }
+        }setPunten();    //de punten worden teveel te rap opgeteld door dei while lus i guess aftellen gaat lik wel goed
+    }
+}
+
+void loop() {
+    pause();
+    toonMol();
+    whackMole();
+
+
+
+}
